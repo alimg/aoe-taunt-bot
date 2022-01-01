@@ -22,7 +22,7 @@ export class PlayerCache {
     }    
     
     const existingSubscription = this.activeConnections.get(channelId);
-    const player = this.getPlayer();
+    const player = existingSubscription?.subscription?.player || this.getPlayer();
     if (!player) {
       return null;
     }
@@ -33,7 +33,6 @@ export class PlayerCache {
 
     const subscription = connection.subscribe(player)
     if (!subscription) {
-      player.removeAllListeners()
       this.availablePlayers.push(player);
       throw new Error("Failed to create player subscription. ChannelID:" + connection.joinConfig.channelId);
     }
@@ -42,6 +41,11 @@ export class PlayerCache {
       this.activeConnections.set(channelId, {subscription})
     }
     return player
+  }
+
+  private release(subscription: PlayerSubscription) {
+    this.availablePlayers.push(subscription.player);
+    this.activeConnections.delete(subscription.connection.joinConfig.channelId!);
   }
 
   private getPlayer(): AudioPlayer | null {
@@ -59,32 +63,30 @@ export class PlayerCache {
 
   private createPlayer() {
     const player = createAudioPlayer();
-    player.on("unsubscribe", (subs) => {
-      this.availablePlayers.push(player);
-      this.activeConnections.delete(subs.connection.joinConfig.channelId!);
-    });
+    player.on("error", log.warn);
+    player.on("unsubscribe", this.release);
     player.on("stateChange", (oldState, newState) => {
       if (newState.status === AudioPlayerStatus.Idle) {
         (player["subscribers"] as PlayerSubscription[]).forEach(subscription => {
-          const channelId = subscription.connection.joinConfig.channelId;
-          if (channelId) {
-            const connectionInfo = this.activeConnections.get(channelId);
-            if (connectionInfo) {
-              if (connectionInfo.disconnectTimer) {
-                clearTimeout(connectionInfo.disconnectTimer);
-              }
-              connectionInfo.disconnectTimer = setTimeout(
-                () => {
-                  connectionInfo.subscription.unsubscribe();
-                  connectionInfo.subscription.connection.disconnect();
-                },
-                this.disconnectTimeoutMs);
-            }
+          const connectionInfo = this.activeConnections.get(subscription.connection.joinConfig.channelId!);
+          if (connectionInfo) {
+            this.resetDisconnectionTimer(connectionInfo)
           }
         });
       }
     });
-    player.on("error", log.warn);
     return player;
   }
+
+  private resetDisconnectionTimer(connectionInfo: ConnectionInfo) {
+    if (connectionInfo.disconnectTimer) {
+      clearTimeout(connectionInfo.disconnectTimer);
+    }
+    connectionInfo.disconnectTimer = setTimeout(() => {
+        connectionInfo.subscription.unsubscribe();
+        connectionInfo.subscription.connection.disconnect();
+      }, this.disconnectTimeoutMs);
+  }
+
+
 }
