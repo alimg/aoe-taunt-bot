@@ -7,10 +7,13 @@ import {
 } from '@discordjs/voice';
 import * as Discord from 'discord.js'
 
+import Keyv from 'keyv';
+
 import { createDiscordJSAdapter } from './adapter';
 import { PlayerCache } from './player-cache';
 
 const INT_PATTERN = /^-?\d+$/
+const ALIAS_PATTERN = /^\$alias\s\"(.*?)\"\s\"(.*?)\"$/
 
 export interface BotConfig {
   maxConcurrentPlayers: number
@@ -55,8 +58,50 @@ export function createBot(config: BotConfig) {
 
   const playerCache = new PlayerCache(config.maxConcurrentPlayers, config.disconnectAferInactivityMs);
 
+  const aliasStore = new Keyv<{[aliasName: string]: string}>('sqlite://db.sqlite');
+
+  async function createAlias(guildId: string, aliasName: string, aliasValue: string) {
+    const aliasMap = await getAliases(guildId);
+    if (Object.keys(aliasMap).length < 20) {
+      await aliasStore.set(guildId, {...aliasMap, [aliasName]: aliasValue});
+    }
+  }
   
-  function parseTaunt(content: string) {
+  async function getAliases(guildId: string) {
+    return await aliasStore.get(guildId) || {}
+  }
+
+  async function fetchAlias(guildId: string, aliasName: string): Promise<string | null> {
+    const aliasMap = await getAliases(guildId);
+    return aliasMap[aliasName];
+  }
+
+  async function getContent(message: Discord.Message<boolean>): Promise<string> {
+    
+    if (message.mentions.users.hasAny(client.user?.id!)) {
+      const words = message.content.replace(`<@!${client.user?.id}>`, "").trim().split(/ +/);
+      if (words[0] + words[1] === "createalias") {
+        const aliasName = words[2]
+        const aliasValue = words.slice(3).join(" ")
+        await createAlias(message.guildId!, aliasName, aliasValue)
+        await message.reply(`You can now type ${aliasName} to execute ${aliasValue} by mentioning me`);
+        return "";
+      } else if (words[0] + words[1] === "listaliases") {
+        const aliasMap = await getAliases(message.guildId!)
+        await message.reply(JSON.stringify(aliasMap))
+        return "";
+      }
+      // check if alias already exists for this user and content
+      const replacement = await fetchAlias(message.guildId!, words[0]);
+      if (replacement) {
+        return replacement;
+      }
+    }
+
+    return message.content
+  }
+
+  async function parseTaunt(content: string) {
     const number = INT_PATTERN.test(content) && parseInt(content, 10);
     if (number > 0 && number < 43) {
       return path.resolve(config.dataDir, `${number}.mp3`);
@@ -75,7 +120,7 @@ export function createBot(config: BotConfig) {
     if (!message.guild || message.author.bot) {
       return;
     }
-    var file = parseTaunt(message.content);
+    var file = await parseTaunt(await getContent(message));
 
     if (file) {
       const channel = message.member?.voice.channel;
