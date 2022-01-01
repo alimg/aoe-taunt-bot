@@ -2,7 +2,11 @@
   "name": "aoe-taunt-bot",
   "version": "1.0.0",
   "description": "Bot that brings AoE II chat experience into your Discord voice channels.",
-  "keywords": ["aoe taunt", "discord", "bot"],
+  "keywords": [
+    "aoe taunt",
+    "discord",
+    "bot"
+  ],
   "main": "dist/index.js",
   "repository": {
     "url": "https://github.com/alimg/aoe-taunt-bot"
@@ -20,6 +24,8 @@
     "@discordjs/voice": "^0.7.5",
     "discord-api-types": "^0.24.0",
     "discord.js": "^13.5.0",
+    "loglevel": "^1.8.0",
+    "loglevel-plugin-prefix": "^0.8.4",
     "sodium": "^3.0.2",
     "typescript": "^4.5.4"
   }

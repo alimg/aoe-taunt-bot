@@ -1,13 +1,22 @@
 #!/usr/bin/env node
 import fs from 'fs';
+import log from 'loglevel';
+import prefix from 'loglevel-plugin-prefix';
 import { BotConfig, createBot } from "./bot";
+
+prefix.reg(log);
+log.setLevel("info")
+prefix.apply(log, {
+  timestampFormatter: (date) => date.toISOString(),
+  format: (level, name, timestamp) => `${timestamp} [${level}]`
+})
 
 interface RunConfig {
   botToken?: string,
   botConfig: Partial<BotConfig>
 }
 
-console.log("Running with args:", process.argv)
+log.info("Running with args:", process.argv)
 const configPath = process.argv[2] || "config.json";
 
 const config: RunConfig = fs.existsSync(configPath) ?
@@ -20,7 +29,7 @@ if (!token) {
 
 const client = createBot({
   dataDir: "data",
-  disconnectAferInactivityMs: 5 * 60_0000,
+  disconnectAferInactivityMs: 5 * 60_000,
   myInstantsEnabled: true,
   maxConcurrentPlayers: 256,
   ...config.botConfig

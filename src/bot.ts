@@ -1,4 +1,5 @@
 import path from 'path';
+import log from 'loglevel';
 
 import {
   AudioPlayer, AudioPlayerStatus, createAudioResource, entersState, joinVoiceChannel,
@@ -20,7 +21,7 @@ export interface BotConfig {
 
 
 function playTaunt(player: AudioPlayer, file: string) {
-  console.log("playing", file)
+  log.info("playing", file);
   const resource = createAudioResource(file, {
     inputType: StreamType.Arbitrary,
   });
@@ -48,7 +49,7 @@ async function connectToChannel(channel: Discord.VoiceBasedChannel) {
 
 
 export function createBot(config: BotConfig) {
-  console.log("Initializing with", config)
+  log.info("Initializing with", config);
 
   const client = new Discord.Client({intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_VOICE_STATES"]});
 
@@ -88,7 +89,7 @@ export function createBot(config: BotConfig) {
             message.reply('I have great many mouths and yet there\'s none to spare.');
           }
         } catch (error) {
-          console.error(error);
+          log.info(error);
         }
       } else {
         message.reply('Join a voice channel then try again!');

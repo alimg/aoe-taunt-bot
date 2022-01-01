@@ -1,5 +1,6 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, PlayerSubscription, VoiceConnection } from "@discordjs/voice";
 import { Snowflake } from "discord-api-types";
+import log from "loglevel"
 
 type ConnectionInfo = {subscription: PlayerSubscription, disconnectTimer?: NodeJS.Timeout}
 
@@ -14,7 +15,7 @@ export class PlayerCache {
   }
 
   acquire(connection: VoiceConnection): AudioPlayer | null {
-    console.log(`PlayerCache stats: created ${this.totalPlayers} available: ${this.availablePlayers.length}, channels: ${this.activeConnections.size}`)
+    log.info(`PlayerCache stats: created ${this.totalPlayers} available: ${this.availablePlayers.length}, channels: ${this.activeConnections.size}`)
     const channelId = connection.joinConfig.channelId
     if (!channelId) {
       throw new Error("Connection is missing channelId");
@@ -25,30 +26,10 @@ export class PlayerCache {
     if (!player) {
       return null;
     }
-
-    player.on("unsubscribe", (subs) => {
-      player.removeAllListeners()
-      this.availablePlayers.push(player)
-      this.activeConnections.delete(subs.connection.joinConfig.channelId!)
-    });
-    player.on("stateChange", (o, n) => {
-      if (n.status === AudioPlayerStatus.Idle) {
-        const connectionInfo = this.activeConnections.get(channelId)
-        if (connectionInfo) {
-          if (connectionInfo.disconnectTimer) {
-            clearTimeout(connectionInfo.disconnectTimer)
-          }
-          connectionInfo.disconnectTimer = setTimeout(
-            () => {
-              connectionInfo.subscription.unsubscribe()
-              connectionInfo.subscription.connection.disconnect();
-            }, 
-            this.disconnectTimeoutMs)
-        }
-      }
-    });
-    player.on("error", console.warn)
-
+    if (existingSubscription?.disconnectTimer) {
+      clearTimeout(existingSubscription.disconnectTimer);
+      delete existingSubscription.disconnectTimer;
+    }
 
     const subscription = connection.subscribe(player)
     if (!subscription) {
@@ -59,10 +40,6 @@ export class PlayerCache {
 
     if (!existingSubscription) {
       this.activeConnections.set(channelId, {subscription})
-    } else {
-      if (existingSubscription!.disconnectTimer) {
-        clearTimeout(existingSubscription.disconnectTimer);
-      }
     }
     return player
   }
@@ -74,10 +51,40 @@ export class PlayerCache {
 
     if (this.totalPlayers < this.maxPlayers) {
       this.totalPlayers++;
-      return createAudioPlayer()
+      return this.createPlayer();
     }
 
     return null;
   }
 
+  private createPlayer() {
+    const player = createAudioPlayer();
+    player.on("unsubscribe", (subs) => {
+      this.availablePlayers.push(player);
+      this.activeConnections.delete(subs.connection.joinConfig.channelId!);
+    });
+    player.on("stateChange", (oldState, newState) => {
+      if (newState.status === AudioPlayerStatus.Idle) {
+        (player["subscribers"] as PlayerSubscription[]).forEach(subscription => {
+          const channelId = subscription.connection.joinConfig.channelId;
+          if (channelId) {
+            const connectionInfo = this.activeConnections.get(channelId);
+            if (connectionInfo) {
+              if (connectionInfo.disconnectTimer) {
+                clearTimeout(connectionInfo.disconnectTimer);
+              }
+              connectionInfo.disconnectTimer = setTimeout(
+                () => {
+                  connectionInfo.subscription.unsubscribe();
+                  connectionInfo.subscription.connection.disconnect();
+                },
+                this.disconnectTimeoutMs);
+            }
+          }
+        });
+      }
+    });
+    player.on("error", log.warn);
+    return player;
+  }
 }
