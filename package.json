@@ -22,8 +22,10 @@
   "dependencies": {
     "@discordjs/opus": "^0.5.3",
     "@discordjs/voice": "^0.7.5",
+    "@keyv/sqlite": "^2.0.3",
     "discord-api-types": "^0.24.0",
     "discord.js": "^13.5.0",
+    "keyv": "^4.0.4",
     "loglevel": "^1.8.0",
     "loglevel-plugin-prefix": "^0.8.4",
     "sodium": "^3.0.2",

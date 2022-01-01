@@ -18,6 +18,7 @@ I don't have a permanent place to host this yet, and I doubt it ever will. If so
 ## Hacking
 * It needs ffmpeg to be installed on your system
 * Build using `npm install && npm run build`
+  - This command has dependencies on `make`, `libtool`, `g++`.
 * Obtain your own bot token from https://discord.com/developers/applications
 * Launch it by `BOT_TOKEN=<your-token> npm start`
 

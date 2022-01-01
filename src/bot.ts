@@ -10,7 +10,10 @@ import * as Discord from 'discord.js'
 import { createDiscordJSAdapter } from './adapter';
 import { PlayerCache } from './player-cache';
 
+const Keyv = require("keyv");
+
 const INT_PATTERN = /^-?\d+$/
+const ALIAS_PATTERN = /^\$alias\s\"(.*?)\"\s\"(.*?)\"$/
 
 export interface BotConfig {
   maxConcurrentPlayers: number
@@ -55,8 +58,37 @@ export function createBot(config: BotConfig) {
 
   const playerCache = new PlayerCache(config.maxConcurrentPlayers, config.disconnectAferInactivityMs);
 
-  
-  function parseTaunt(content: string) {
+  const aliasStore = new Keyv('sqlite://db.sqlite');
+
+  async function createAlias(userId: string, evaluated: string, alias: string) {
+    await aliasStore.set(`${userId}_${alias}`, evaluated);
+  }
+
+  async function evalAlias(userId: string, content: string): Promise<string | null> {
+    const result = await aliasStore.get(`${userId}_${content}`);
+    if (result) {
+      return result
+    } else {
+      return null
+    }
+  }
+
+  async function parseTaunt(message: Discord.Message<boolean>) {
+    let content = message.content;
+
+    const groups = ALIAS_PATTERN.test(content) && content.match(ALIAS_PATTERN);
+    if (groups && groups.length == 3) {
+      await createAlias(message.author.id, groups[1], groups[2]);
+      await message.reply(`You can now type ${groups[2]} to execute ${groups[1]}`);
+      return null;
+    }
+
+    // check if alias already exists for this user and content
+    const evaluatedContent = await evalAlias(message.author.id, message.content);
+    if (evaluatedContent != null) {
+      content = evaluatedContent;
+    }
+
     const number = INT_PATTERN.test(content) && parseInt(content, 10);
     if (number > 0 && number < 43) {
       return path.resolve(config.dataDir, `${number}.mp3`);
@@ -75,7 +107,7 @@ export function createBot(config: BotConfig) {
     if (!message.guild || message.author.bot) {
       return;
     }
-    var file = parseTaunt(message.content);
+    var file = await parseTaunt(message);
 
     if (file) {
       const channel = message.member?.voice.channel;
