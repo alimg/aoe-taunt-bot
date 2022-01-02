@@ -19,6 +19,8 @@ interface RunConfig {
 log.info("Running with args:", process.argv)
 const configPath = process.argv[2] || "config.json";
 
+log.info("Config path:", configPath)
+
 const config: RunConfig = fs.existsSync(configPath) ?
   JSON.parse(fs.readFileSync(configPath).toString("utf-8")) : {};
 const token = process.env.BOT_TOKEN || config.botToken
