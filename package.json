@@ -7,13 +7,14 @@
     "discord",
     "bot"
   ],
-  "main": "dist/index.js",
+  "bin": "dist/index.js",
   "repository": {
     "url": "https://github.com/alimg/aoe-taunt-bot"
   },
   "scripts": {
     "build": "tsc && chmod +x dist/index.js",
     "clean": "rm -rf dist",
+    "build-bin": "npm run build && pkg .",
     "start": "npm run build && ./dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -29,7 +30,24 @@
     "keyv": "^4.0.4",
     "loglevel": "^1.8.0",
     "loglevel-plugin-prefix": "^0.8.4",
-    "sodium": "^3.0.2",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "pkg": "^5.5.1",
     "typescript": "^4.5.4"
+  },
+  "pkg": {
+    "assets": [
+      "data/*",
+      "data/**/*",
+      "node_modules/**/*.node"
+    ],
+    "scripts": [
+      "dist/*.js"
+    ],
+    "targets": [
+      "node16-linux-x64"
+    ],
+    "outputPath": "dist"
   }
 }

@@ -64,7 +64,7 @@ export class PlayerCache {
   private createPlayer() {
     const player = createAudioPlayer();
     player.on("error", log.warn);
-    player.on("unsubscribe", this.release);
+    player.on("unsubscribe", (e) => this.release(e));
     player.on("stateChange", (oldState, newState) => {
       if (newState.status === AudioPlayerStatus.Idle) {
         (player["subscribers"] as PlayerSubscription[]).forEach(subscription => {

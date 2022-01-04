@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import log from 'loglevel';
 
@@ -13,7 +14,6 @@ import { createDiscordJSAdapter } from './adapter';
 import { PlayerCache } from './player-cache';
 
 const INT_PATTERN = /^-?\d+$/
-const ALIAS_PATTERN = /^\$alias\s\"(.*?)\"\s\"(.*?)\"$/
 
 export interface BotConfig {
   maxConcurrentPlayers: number
@@ -24,7 +24,6 @@ export interface BotConfig {
 
 
 function playTaunt(player: AudioPlayer, file: string) {
-  log.info("playing", file);
   const resource = createAudioResource(file, {
     inputType: StreamType.Arbitrary,
   });
@@ -61,9 +60,9 @@ export function createBot(config: BotConfig) {
   const aliasStore = new Keyv<{[aliasName: string]: string}>('sqlite://db.sqlite');
 
   async function createAlias(guildId: string, aliasName: string, aliasValue: string) {
-    const aliasMap = await getAliases(guildId);
-    if (Object.keys(aliasMap).length < 20) {
-      await aliasStore.set(guildId, {...aliasMap, [aliasName]: aliasValue});
+    const aliasMap = {...await getAliases(guildId), [aliasName]: aliasValue};
+    if (Object.keys(aliasMap).length <= 20) {
+      await aliasStore.set(guildId, aliasMap);
     }
   }
   
@@ -103,10 +102,7 @@ export function createBot(config: BotConfig) {
 
   async function parseTaunt(content: string) {
     const number = INT_PATTERN.test(content) && parseInt(content, 10);
-    if (number > 0 && number < 43) {
-      return path.resolve(config.dataDir, `${number}.mp3`);
-    }
-    if (content === "ready" || content === "weaver") {
+    if (fs.readdirSync(config.dataDir).indexOf(`${content}.mp3`) >= 0) {
       return path.resolve(config.dataDir, `${content}.mp3`);
     }
     if (config.myInstantsEnabled && content.startsWith("instant")) {
@@ -129,6 +125,7 @@ export function createBot(config: BotConfig) {
           const connection = await connectToChannel(channel);
           const player = playerCache.acquire(connection);
           if (player) {
+            log.info("playing", file, message.guild.name, message.guild.id);
             await playTaunt(player, file);
           } else {
             message.reply('I have great many mouths and yet there\'s none to spare.');
