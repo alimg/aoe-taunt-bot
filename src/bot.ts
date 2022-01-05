@@ -9,7 +9,6 @@ import {
 import * as Discord from 'discord.js'
 
 import Keyv from 'keyv';
-import { table } from 'table';
 
 import { createDiscordJSAdapter } from './adapter';
 import { PlayerCache } from './player-cache';
@@ -102,8 +101,12 @@ export function createBot(config: BotConfig) {
           data = data.sort((a: string[], b: string[]) => {
             return a[0].localeCompare(b[0]);
           });
-          data = [["Alias", "Evaluated expression"]].concat(data);
-          await message.reply("```\n" + table(data) + "```\n")
+          let replyContent = "```\n";
+          data.forEach((line) => {
+            replyContent += line[0] + "➡️" + line[1] + "\n";
+          })
+          replyContent += "```\n";
+          await message.reply(replyContent)
         }
         return "";
       }
@@ -133,26 +136,29 @@ export function createBot(config: BotConfig) {
     if (!message.guild || message.author.bot) {
       return;
     }
-    var file = await parseTaunt(await getContent(message));
 
-    if (file) {
-      const channel = message.member?.voice.channel;
-      if (channel) {
-        try {
-          const connection = await connectToChannel(channel);
-          const player = playerCache.acquire(connection);
-          if (player) {
-            log.info("playing", file, message.guild.name, message.guild.id);
-            await playTaunt(player, file);
-          } else {
-            message.reply('I have great many mouths and yet there\'s none to spare.');
+    try {
+      var file = await parseTaunt(await getContent(message));
+
+      if (file) {
+        const channel = message.member?.voice.channel;
+        if (channel) {
+          
+            const connection = await connectToChannel(channel);
+            const player = playerCache.acquire(connection);
+            if (player) {
+              log.info("playing", file, message.guild.name, message.guild.id);
+              await playTaunt(player, file);
+            } else {
+              message.reply('I have great many mouths and yet there\'s none to spare.');
+            }
           }
-        } catch (error) {
-          log.info(error);
+        } else {
+          message.reply('Join a voice channel then try again!');
         }
-      } else {
-        message.reply('Join a voice channel then try again!');
       }
+    catch (error) {
+      log.error(error);
     }
   });
   return client;
