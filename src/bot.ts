@@ -9,6 +9,7 @@ import {
 import * as Discord from 'discord.js'
 
 import Keyv from 'keyv';
+import { table } from 'table';
 
 import { createDiscordJSAdapter } from './adapter';
 import { PlayerCache } from './player-cache';
@@ -76,9 +77,13 @@ export function createBot(config: BotConfig) {
   }
 
   async function getContent(message: Discord.Message<boolean>): Promise<string> {
-    
     if (message.mentions.users.hasAny(client.user?.id!)) {
-      const words = message.content.replace(`<@!${client.user?.id}>`, "").trim().split(/ +/);
+      const words = message.content
+        .replace(`<@!${client.user?.id}>`, "") // desktop mentions
+        .replace(`<@${client.user?.id}>`, "") // mobile mentions
+        .trim()
+        .split(/ +/);
+        
       if (words[0] + words[1] === "createalias") {
         const aliasName = words[2]
         const aliasValue = words.slice(3).join(" ")
@@ -87,7 +92,19 @@ export function createBot(config: BotConfig) {
         return "";
       } else if (words[0] + words[1] === "listaliases") {
         const aliasMap = await getAliases(message.guildId!)
-        await message.reply(JSON.stringify(aliasMap))
+        let data: any[][] = [];
+        for (let key in aliasMap) {
+          data.push([key, aliasMap[key]]);
+        }
+        if (data.length === 0) {
+          await message.reply("There are no aliases")
+        } else {
+          data = data.sort((a: string[], b: string[]) => {
+            return a[0].localeCompare(b[0]);
+          });
+          data = [["Alias", "Evaluated expression"]].concat(data);
+          await message.reply("```\n" + table(data) + "```\n")
+        }
         return "";
       }
       // check if alias already exists for this user and content
