@@ -5,9 +5,9 @@ import log from "loglevel"
 type ConnectionInfo = {subscription: PlayerSubscription, disconnectTimer?: NodeJS.Timeout}
 
 export class PlayerCache {
-  private readonly availablePlayers: Array<AudioPlayer> = new Array();
+  private readonly availablePlayers: Array<AudioPlayer> = [];
   private totalPlayers = 0
-  private readonly activeConnections: Map<Snowflake, ConnectionInfo> = new Map();
+  private readonly activeConnections: Map<Snowflake | null, ConnectionInfo> = new Map();
 
   constructor(
     public readonly maxPlayers: number,
@@ -45,12 +45,12 @@ export class PlayerCache {
 
   private release(subscription: PlayerSubscription) {
     this.availablePlayers.push(subscription.player);
-    this.activeConnections.delete(subscription.connection.joinConfig.channelId!);
+    this.activeConnections.delete(subscription.connection.joinConfig.channelId);
   }
 
-  private getPlayer(): AudioPlayer | null {
+  private getPlayer(): AudioPlayer | undefined {
     if (this.availablePlayers.length > 0) {
-      return this.availablePlayers.shift()!
+      return this.availablePlayers.shift()
     }
 
     if (this.totalPlayers < this.maxPlayers) {
@@ -58,7 +58,7 @@ export class PlayerCache {
       return this.createPlayer();
     }
 
-    return null;
+    return undefined;
   }
 
   private createPlayer() {
@@ -68,7 +68,7 @@ export class PlayerCache {
     player.on("stateChange", (oldState, newState) => {
       if (newState.status === AudioPlayerStatus.Idle) {
         (player["subscribers"] as PlayerSubscription[]).forEach(subscription => {
-          const connectionInfo = this.activeConnections.get(subscription.connection.joinConfig.channelId!);
+          const connectionInfo = this.activeConnections.get(subscription.connection.joinConfig.channelId);
           if (connectionInfo) {
             this.resetDisconnectionTimer(connectionInfo)
           }
