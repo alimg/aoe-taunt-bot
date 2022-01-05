@@ -143,20 +143,19 @@ export function createBot(config: BotConfig) {
       if (file) {
         const channel = message.member?.voice.channel;
         if (channel) {
-          
-            const connection = await connectToChannel(channel);
-            const player = playerCache.acquire(connection);
-            if (player) {
-              log.info("playing", file, message.guild.name, message.guild.id);
-              await playTaunt(player, file);
-            } else {
-              message.reply('I have great many mouths and yet there\'s none to spare.');
-            }
+          const connection = await connectToChannel(channel);
+          const player = playerCache.acquire(connection);
+          if (player) {
+            log.info("playing", file, message.guild.name, message.guild.id);
+            await playTaunt(player, file);
+          } else {
+            message.reply('I have great many mouths and yet there\'s none to spare.');
           }
         } else {
           message.reply('Join a voice channel then try again!');
         }
-      }
+      } 
+    }
     catch (error) {
       log.error(error);
     }
