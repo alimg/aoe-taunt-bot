@@ -60,7 +60,7 @@ export function createBot(config: BotConfig) {
 
   async function createAlias(guildId: string, aliasName: string, aliasValue: string) {
     const aliasMap = {...await getAliases(guildId), [aliasName]: aliasValue};
-    if (Object.keys(aliasMap).length <= 20) {
+    if (Object.keys(aliasMap).length <= 200) {
       await aliasStore.set(guildId, aliasMap);
     }
   }
