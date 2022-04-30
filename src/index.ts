@@ -34,6 +34,7 @@ const client = createBot({
   disconnectAferInactivityMs: 5 * 60_000,
   myInstantsEnabled: true,
   maxConcurrentPlayers: 256,
+  bannedSounds: [],
   ...config.botConfig
 });
 client.login(token);

@@ -19,6 +19,7 @@ export interface BotConfig {
   disconnectAferInactivityMs: number
   dataDir: string
   myInstantsEnabled: boolean
+  bannedSounds: string[]
 }
 
 
@@ -132,6 +133,10 @@ export function createBot(config: BotConfig) {
       const file = await parseTaunt(await getContent(message));
 
       if (file) {
+        if (config.bannedSounds.some(pattern => file?.indexOf(pattern) >= 0)) {
+          message.reply("Don't speak to me like that. Ever.");
+          return;
+        }
         const channel = message.member?.voice.channel;
         if (channel) {
           const connection = await connectToChannel(channel);
