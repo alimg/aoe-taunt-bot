@@ -23,7 +23,7 @@ export interface BotConfig {
 }
 
 
-function playTaunt(player: AudioPlayer, file: string) {
+export function playTaunt(player: AudioPlayer, file: string) {
   const resource = createAudioResource(file, {
     inputType: StreamType.Arbitrary,
   });
@@ -33,7 +33,7 @@ function playTaunt(player: AudioPlayer, file: string) {
   return entersState(player, AudioPlayerStatus.Playing, 5e3);
 }
 
-async function connectToChannel(channel: Discord.VoiceBasedChannel) {
+export async function connectToChannel(channel: Discord.VoiceBasedChannel) {
   const connection = joinVoiceChannel({
     channelId: channel.id,
     guildId: channel.guild.id,
@@ -58,12 +58,29 @@ export function createBot(config: BotConfig) {
   const playerCache = new PlayerCache(config.maxConcurrentPlayers, config.disconnectAferInactivityMs);
 
   const aliasStore = new Keyv<{[aliasName: string]: string}>('sqlite://db.sqlite');
+  const configStore = new Keyv<{personalThemes?: {[authorId: string]: string}}>('sqlite://db_guild_preferences.sqlite');
 
   async function createAlias(guildId: string, aliasName: string, aliasValue: string) {
     const aliasMap = {...await getAliases(guildId), [aliasName]: aliasValue};
     if (Object.keys(aliasMap).length <= 200) {
       await aliasStore.set(guildId, aliasMap);
     }
+  }
+  async function setPersonalTheme(guildId: string, authorId: string, themeCommand: string) {
+    const conf = await configStore.get(guildId)
+    if (conf?.personalThemes) {
+      await configStore.set(guildId, {...conf, personalThemes: {
+        ...(conf.personalThemes ?? {}),
+        [authorId]: themeCommand
+      }})
+    } else {
+      await configStore.set(guildId, {personalThemes: {
+        [authorId]: themeCommand
+      }})
+    }
+  }
+  async function getPersonalTheme(guildId: string, authorId: string) {
+    return ((await configStore.get(guildId))?.personalThemes??{})[authorId] ?? ""
   }
   
   async function getAliases(guildId: string) {
@@ -101,6 +118,12 @@ export function createBot(config: BotConfig) {
           const replyContent = codeBlock(entries.map(line => line.join("➡️")).join("\n"))
           await message.reply(replyContent)
         }
+        return "";
+      } else if (words[0] + words[1] + words[2] === "setmytheme") {
+        const themeCommand = words.slice(3).join(" ")
+        console.log("set theme (gid,uid,cmd)", message.guildId, message.author.id, themeCommand)
+        await setPersonalTheme(message.guildId, message.author.id, themeCommand)
+        await message.react("👍")
         return "";
       }
       // check if alias already exists for this user and content
@@ -142,7 +165,7 @@ export function createBot(config: BotConfig) {
           const connection = await connectToChannel(channel);
           const player = playerCache.acquire(connection);
           if (player) {
-            log.info("playing", file, message.guild.name, message.guild.id);
+            log.info("playing", file, message.guild.name, message.guild.id, channel.id);
             await playTaunt(player, file);
           } else {
             message.reply('I have great many mouths and yet there\'s none to spare.');
@@ -156,5 +179,38 @@ export function createBot(config: BotConfig) {
       log.error(error);
     }
   });
+
+  // when someone joins a channel
+  client.on("voiceStateUpdate", async (oldState, newState) => {
+    if (oldState.channelId != newState.channelId && newState.channelId) {
+
+      if (!newState.guild || newState.member?.user.bot) {
+        return;
+      }
+      console.log("user entered voice channel (userId,channelId:)", newState.id, newState.channelId)
+
+      try {
+        const file = await parseTaunt(await getPersonalTheme(newState.guild.id, newState.id));
+
+        if (file) {
+          if (config.bannedSounds.some(pattern => file?.indexOf(pattern) >= 0)) {
+            return;
+          }
+          const channel = newState.channel;
+          if (channel) {
+            const connection = await connectToChannel(channel);
+            const player = playerCache.acquire(connection);
+            if (player) {
+              log.info("playing", file, newState.guild.name, newState.guild.id, channel.id);
+              await playTaunt(player, file);
+            } 
+          }
+        } 
+      }
+      catch (error) {
+        log.error(error);
+      }
+    }
+  })
   return client;
 }

@@ -65,7 +65,7 @@ export class PlayerCache {
     const player = createAudioPlayer();
     player.on("error", log.warn);
     player.on("unsubscribe", (e) => this.release(e));
-    player.on("stateChange", (oldState, newState) => {
+    player.on<"stateChange">("stateChange", (oldState, newState) => {
       if (newState.status === AudioPlayerStatus.Idle) {
         (player["subscribers"] as PlayerSubscription[]).forEach(subscription => {
           const connectionInfo = this.activeConnections.get(subscription.connection.joinConfig.channelId);
