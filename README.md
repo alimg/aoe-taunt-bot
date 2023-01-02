@@ -26,7 +26,7 @@ I don't have a permanent place to host this yet, and I doubt it ever will. If so
 
 AOE-taunt-bot also utilizes a config.json file for various canfigurations.
 
-**Naming**: Default name for the file is `config.json` and it is located at the root folder of the project. File location and name can be changed but must be supplied as a running argument. 
+**Naming**: Default name for the file is `config.json` and it should be located at the root folder of the project. File location and name can be changed but must be supplied as a command-line argument. 
 
 ```
 npm start 
@@ -38,7 +38,7 @@ npm start my_config.json
 
 ### Options
 
-Fully typed structure of config file is given below
+Fully typed structure of a sample config file is given below
 
 ```
 {
@@ -47,7 +47,8 @@ Fully typed structure of config file is given below
     maxConcurrentPlayers: number,
     disconnectAferInactivityMs: number,
     dataDir: string,
-    myInstantsEnabled: boolean
+    myInstantsEnabled: boolean,
+    wikiaCDNEnabled: boolean
   }
 }
 ```
@@ -61,4 +62,6 @@ Fully typed structure of config file is given below
 **botConfig.dataDir**: Data folder location to read supported mp3 files. Default is `data`.
 
 **botConfig.myInstantsEnabled**: The bot supports replaying buttons from `myinstants.com`. This feature can be toggled by this config. Default is true.
+
+**botConfig.wikiaCDNEnabled**: The bot supports replaying buttons from `*.fandom.com`'s CDN. This feature can be toggled by this config. Default is true.
 

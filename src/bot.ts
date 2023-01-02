@@ -19,6 +19,7 @@ export interface BotConfig {
   disconnectAferInactivityMs: number
   dataDir: string
   myInstantsEnabled: boolean
+  wikiaCDNEnabled: boolean
   bannedSounds: string[]
 }
 
@@ -141,8 +142,13 @@ export function createBot(config: BotConfig) {
       return path.resolve(config.dataDir, `${content}.mp3`);
     }
     if (config.myInstantsEnabled && content.startsWith("instant")) {
-      const sound = encodeURIComponent(content.substr("instant".length).trim().substr(0, 256))
+      const sound = encodeURIComponent(content.slice("instant".length).trim().slice(0, 256))
       return `https://www.myinstants.com/media/sounds/${sound}.mp3`;
+    }
+    if (config.wikiaCDNEnabled && content.startsWith("wikiacdn")) {
+      const link = content.slice("wikiacdn".length).trim().slice(0, 256);
+      if (link.startsWith("https://static.wikia.nocookie.net/"))
+        return link;
     }
     return null;
   }
