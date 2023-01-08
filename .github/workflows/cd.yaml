@@ -27,6 +27,6 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
     - name: copy assets to server
-      run: rsync -r ./dist/aoe-taunt-bot data alimg@150.230.127.204:/home/alimg
+      run: rsync -r ./dist/aoe-taunt-bot data alimg@141.147.76.96:/home/alimg
     - name: restart the service
-      run: ssh alimg@150.230.127.204 -f 'systemctl --user restart aoe-taunt-bot'
+      run: ssh alimg@141.147.76.96 -f 'systemctl --user restart aoe-taunt-bot'
