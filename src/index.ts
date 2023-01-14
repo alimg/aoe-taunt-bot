@@ -29,11 +29,16 @@ if (!token) {
   throw new Error("missing bot token");
 }
 
+const fandomDomainInfo = {
+  "aoe": "https://ageofempires.fandom.com/api.php",
+  "dota":"https://dota2.fandom.com/api.php",
+}
 const client = createBot({
   dataDir: "data",
   disconnectAferInactivityMs: 5 * 60_000,
   myInstantsEnabled: true,
-  wikiaCDNEnabled: true,
+  mediawikiCDNEnabled: true,
+  fandomDomains: fandomDomainInfo,
   maxConcurrentPlayers: 256,
   bannedSounds: [],
   ...config.botConfig

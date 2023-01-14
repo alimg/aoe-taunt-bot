@@ -13,13 +13,15 @@ import Keyv from 'keyv';
 
 import { createDiscordJSAdapter } from './adapter';
 import { PlayerCache } from './player-cache';
+import {searchAudioFile} from "./mediawiki-adapter";
 
 export interface BotConfig {
   maxConcurrentPlayers: number
   disconnectAferInactivityMs: number
   dataDir: string
   myInstantsEnabled: boolean
-  wikiaCDNEnabled: boolean
+  mediawikiCDNEnabled: boolean
+  fandomDomains: {[name:string]: string}
   bannedSounds: string[]
 }
 
@@ -145,10 +147,12 @@ export function createBot(config: BotConfig) {
       const sound = encodeURIComponent(content.slice("instant".length).trim().slice(0, 256))
       return `https://www.myinstants.com/media/sounds/${sound}.mp3`;
     }
-    if (config.wikiaCDNEnabled && content.startsWith("wikiacdn")) {
-      const link = content.slice("wikiacdn".length).trim().slice(0, 256);
-      if (link.startsWith("https://static.wikia.nocookie.net/"))
-        return link;
+    if (config.mediawikiCDNEnabled && content.startsWith("fandom")) {
+      const [domain, filename] = content.slice("fandom".length).trim().split(/\s+/);
+      // log.info("dom", domain, "url", config.fandomDomains[domain], "fn", filename);
+      const link = await searchAudioFile(config.fandomDomains[domain], filename);
+      log.info("returned", link)
+      return link;
     }
     return null;
   }

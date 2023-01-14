@@ -48,7 +48,7 @@ Fully typed structure of a sample config file is given below
     disconnectAferInactivityMs: number,
     dataDir: string,
     myInstantsEnabled: boolean,
-    wikiaCDNEnabled: boolean
+    mediawikiCDNEnabled: boolean
   }
 }
 ```
@@ -63,5 +63,5 @@ Fully typed structure of a sample config file is given below
 
 **botConfig.myInstantsEnabled**: The bot supports replaying buttons from `myinstants.com`. This feature can be toggled by this config. Default is true.
 
-**botConfig.wikiaCDNEnabled**: The bot supports replaying buttons from `*.fandom.com`'s CDN. This feature can be toggled by this config. Default is true.
+**botConfig.mediawikiCDNEnabled**: The bot supports playing audio from `*.fandom.com`'s CDN (MediaWiki CDN). This feature can be toggled by this config. Default is true.
 
