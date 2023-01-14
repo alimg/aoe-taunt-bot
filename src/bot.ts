@@ -124,7 +124,7 @@ export function createBot(config: BotConfig) {
         return "";
       } else if (words[0] + words[1] + words[2] === "setmytheme") {
         const themeCommand = words.slice(3).join(" ")
-        console.log("set theme (gid,uid,cmd)", message.guildId, message.author.id, themeCommand)
+        log.info("set theme (gid,uid,cmd)", message.guildId, message.author.id, themeCommand)
         await setPersonalTheme(message.guildId, message.author.id, themeCommand)
         await message.react("👍")
         return "";
@@ -197,7 +197,7 @@ export function createBot(config: BotConfig) {
       if (!newState.guild || newState.member?.user.bot) {
         return;
       }
-      console.log("user entered voice channel (userId,channelId:)", newState.id, newState.channelId)
+      log.info("user entered voice channel (userId,channelId:)", newState.id, newState.channelId)
 
       try {
         const file = await parseTaunt(await getPersonalTheme(newState.guild.id, newState.id));
