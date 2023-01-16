@@ -140,11 +140,12 @@ export function createBot(config: BotConfig) {
   }
 
   async function parseTaunt(content: string) {
+    content = content.slice(0, 256) // limiting the length of command string to prevent bad user input
     if (fs.readdirSync(config.dataDir).indexOf(`${content}.mp3`) >= 0) {
       return path.resolve(config.dataDir, `${content}.mp3`);
     }
     if (config.myInstantsEnabled && content.startsWith("instant")) {
-      const sound = encodeURIComponent(content.slice("instant".length).trim().slice(0, 256))
+      const sound = encodeURIComponent(content.slice("instant".length).trim())
       return `https://www.myinstants.com/media/sounds/${sound}.mp3`;
     }
     if (config.mediawikiCDNEnabled && content.startsWith("fandom")) {
