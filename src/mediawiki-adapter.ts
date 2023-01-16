@@ -34,9 +34,7 @@ export async function searchAudioFile(domainApiUrl:string, filename: string) {
         format: 'json'
     }) as queryResult;
     // log.info("retrieved", JSON.stringify(data,undefined, 4));
-    const ret = (data.query?.pages || [null])[0];
-    if (ret?.missing)
-        return null;
+    const firstPage = (data.query?.pages || []).find(page => !page?.missing)
     if (ret.imageinfo[0]?.mediatype === "AUDIO" && ret.imageinfo[0].size < sizeLimit) {
         return ret.imageinfo[0].url;
     }
