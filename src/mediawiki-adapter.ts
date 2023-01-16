@@ -29,7 +29,7 @@ export async function searchMediaWikiAudioFile(domainApiUrl:string, filename: st
     const data = await bot.request({
         action: 'query',
         prop: 'imageinfo',
-        titles: `File:${filename}.mp3`,
+        titles: `File:${filename}`,
         iiprop: 'url|size|mediatype',
         format: 'json'
     }) as QueryResult;
