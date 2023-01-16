@@ -13,7 +13,7 @@ import Keyv from 'keyv';
 
 import { createDiscordJSAdapter } from './adapter';
 import { PlayerCache } from './player-cache';
-import {searchAudioFile} from "./mediawiki-adapter";
+import {searchMediaWikiAudioFile} from "./mediawiki-adapter";
 
 export interface BotConfig {
   maxConcurrentPlayers: number
@@ -149,9 +149,7 @@ export function createBot(config: BotConfig) {
     }
     if (config.mediawikiCDNEnabled && content.startsWith("fandom")) {
       const [domain, filename] = content.slice("fandom".length).trim().split(/\s+/);
-      // log.info("dom", domain, "url", config.fandomDomains[domain], "fn", filename);
-      const link = await searchAudioFile(config.fandomDomains[domain], filename);
-      log.info("returned", link)
+      const link = await searchMediaWikiAudioFile(config.fandomDomains[domain], filename);
       return link;
     }
     return null;
