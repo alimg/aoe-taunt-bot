@@ -13,12 +13,15 @@ import Keyv from 'keyv';
 
 import { createDiscordJSAdapter } from './adapter';
 import { PlayerCache } from './player-cache';
+import {searchMediaWikiAudioFile} from "./mediawiki-adapter";
 
 export interface BotConfig {
   maxConcurrentPlayers: number
   disconnectAferInactivityMs: number
   dataDir: string
   myInstantsEnabled: boolean
+  mediawikiCDNEnabled: boolean
+  fandomDomains: {[name:string]: string}
   bannedSounds: string[]
 }
 
@@ -121,7 +124,7 @@ export function createBot(config: BotConfig) {
         return "";
       } else if (words[0] + words[1] + words[2] === "setmytheme") {
         const themeCommand = words.slice(3).join(" ")
-        console.log("set theme (gid,uid,cmd)", message.guildId, message.author.id, themeCommand)
+        log.info("set theme (gid,uid,cmd)", message.guildId, message.author.id, themeCommand)
         await setPersonalTheme(message.guildId, message.author.id, themeCommand)
         await message.react("👍")
         return "";
@@ -137,12 +140,18 @@ export function createBot(config: BotConfig) {
   }
 
   async function parseTaunt(content: string) {
+    content = content.slice(0, 256) // limiting the length of command string to prevent bad user input
     if (fs.readdirSync(config.dataDir).indexOf(`${content}.mp3`) >= 0) {
       return path.resolve(config.dataDir, `${content}.mp3`);
     }
     if (config.myInstantsEnabled && content.startsWith("instant")) {
-      const sound = encodeURIComponent(content.substr("instant".length).trim().substr(0, 256))
+      const sound = encodeURIComponent(content.slice("instant".length).trim())
       return `https://www.myinstants.com/media/sounds/${sound}.mp3`;
+    }
+    if (config.mediawikiCDNEnabled && content.startsWith("fandom")) {
+      const [domain, filename] = content.slice("fandom".length).trim().split(/\s+/);
+      const link = await searchMediaWikiAudioFile(config.fandomDomains[domain], filename);
+      return link;
     }
     return null;
   }
@@ -187,7 +196,7 @@ export function createBot(config: BotConfig) {
       if (!newState.guild || newState.member?.user.bot) {
         return;
       }
-      console.log("user entered voice channel (userId,channelId:)", newState.id, newState.channelId)
+      log.info("user entered voice channel (userId,channelId:)", newState.id, newState.channelId)
 
       try {
         const file = await parseTaunt(await getPersonalTheme(newState.guild.id, newState.id));
