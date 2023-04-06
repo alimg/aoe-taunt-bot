@@ -2,5 +2,5 @@ node_modules
 dist
 
 config.json
-db.sqlite
+*.sqlite
 .idea/

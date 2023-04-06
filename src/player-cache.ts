@@ -1,5 +1,5 @@
 import { AudioPlayer, AudioPlayerStatus, createAudioPlayer, PlayerSubscription, VoiceConnection } from "@discordjs/voice";
-import { Snowflake } from "discord-api-types";
+import { Snowflake } from "discord.js";
 import log from "loglevel"
 
 type ConnectionInfo = {subscription: PlayerSubscription, disconnectTimer?: NodeJS.Timeout}
@@ -65,7 +65,7 @@ export class PlayerCache {
     const player = createAudioPlayer();
     player.on("error", log.warn);
     player.on("unsubscribe", (e) => this.release(e));
-    player.on<"stateChange">("stateChange", (oldState, newState) => {
+    player.on("stateChange", (oldState, newState) => {
       if (newState.status === AudioPlayerStatus.Idle) {
         (player["subscribers"] as PlayerSubscription[]).forEach(subscription => {
           const connectionInfo = this.activeConnections.get(subscription.connection.joinConfig.channelId);

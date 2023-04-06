@@ -1,6 +1,5 @@
 import { DiscordGatewayAdapterCreator, DiscordGatewayAdapterLibraryMethods } from '@discordjs/voice';
-import { GatewayVoiceStateUpdateDispatchData, GatewayVoiceServerUpdateDispatchData } from 'discord-api-types';
-import { Snowflake, Client, Constants, Guild, VoiceBasedChannel } from 'discord.js';
+import { Snowflake, Client, Guild, VoiceBasedChannel, GatewayDispatchEvents, GatewayVoiceServerUpdateDispatchData, GatewayVoiceStateUpdateDispatchData, Events, Status } from 'discord.js';
 
 const adapters = new Map<Snowflake, DiscordGatewayAdapterLibraryMethods>();
 const trackedClients = new Set<Client>();
@@ -15,15 +14,15 @@ function trackClient(client: Client) {
     return;
   }
   trackedClients.add(client);
-  client.ws.on(Constants.WSEvents.VOICE_SERVER_UPDATE, (payload: GatewayVoiceServerUpdateDispatchData) => {
+  client.ws.on(GatewayDispatchEvents.VoiceServerUpdate, (payload: GatewayVoiceServerUpdateDispatchData) => {
     adapters.get(payload.guild_id)?.onVoiceServerUpdate(payload);
   });
-  client.ws.on(Constants.WSEvents.VOICE_STATE_UPDATE, (payload: GatewayVoiceStateUpdateDispatchData) => {
+  client.ws.on(GatewayDispatchEvents.VoiceStateUpdate, (payload: GatewayVoiceStateUpdateDispatchData) => {
     if (payload.guild_id && payload.session_id && payload.user_id === client.user?.id) {
       adapters.get(payload.guild_id)?.onVoiceStateUpdate(payload);
     }
   });
-  client.on(Constants.Events.SHARD_DISCONNECT, (_, shardID) => {
+  client.on(Events.ShardDisconnect, (_, shardID) => {
     const guilds = trackedShards.get(shardID);
     if (guilds) {
       for (const guildID of guilds.values()) {
@@ -57,7 +56,7 @@ export function createDiscordJSAdapter(channel: VoiceBasedChannel): DiscordGatew
     trackGuild(channel.guild);
     return {
       sendPayload(data) {
-        if (channel.guild.shard.status === Constants.Status.READY) {
+        if (channel.guild.shard.status === Status.Ready) {
           channel.guild.shard.send(data);
           return true;
         }

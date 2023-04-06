@@ -7,6 +7,7 @@ import {
   StreamType, VoiceConnectionStatus
 } from '@discordjs/voice';
 import * as Discord from 'discord.js';
+import { GatewayIntentBits } from 'discord.js';
 import { codeBlock } from '@discordjs/builders';
 
 import Keyv from 'keyv';
@@ -47,7 +48,11 @@ export async function connectToChannel(channel: Discord.VoiceBasedChannel) {
     await entersState(connection, VoiceConnectionStatus.Ready, 30e3);
     return connection;
   } catch (error) {
-    connection.destroy();
+    try {
+      connection.destroy();
+    } catch (error) {
+      console.log("error while destroying connection", error)
+    }
     throw error;
   }
 }
@@ -56,7 +61,10 @@ export async function connectToChannel(channel: Discord.VoiceBasedChannel) {
 export function createBot(config: BotConfig) {
   log.info("Initializing with", config);
 
-  const client = new Discord.Client({intents: ["GUILDS", "GUILD_MESSAGES", "GUILD_VOICE_STATES"]});
+  const client = new Discord.Client({intents: [
+    GatewayIntentBits.Guilds, 
+    GatewayIntentBits.GuildMessages, 
+    GatewayIntentBits.GuildVoiceStates]});
 
   const playerCache = new PlayerCache(config.maxConcurrentPlayers, config.disconnectAferInactivityMs);
 
