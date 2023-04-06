@@ -64,6 +64,7 @@ export function createBot(config: BotConfig) {
   const client = new Discord.Client({intents: [
     GatewayIntentBits.Guilds, 
     GatewayIntentBits.GuildMessages, 
+    GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildVoiceStates]});
 
   const playerCache = new PlayerCache(config.maxConcurrentPlayers, config.disconnectAferInactivityMs);
