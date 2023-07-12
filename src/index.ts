@@ -37,7 +37,7 @@ const client = createBot({
   dataDir: "data",
   disconnectAferInactivityMs: 5 * 60_000,
   myInstantsEnabled: true,
-  mediawikiCDNEnabled: true,
+  mediawikiCDNEnabled: false,
   fandomDomains: fandomDomainInfo,
   maxConcurrentPlayers: 256,
   bannedSounds: [],
