@@ -98,7 +98,7 @@ export function makeCommander(botContext: BotContext) {
           .split(/ +/);
         for (const [keywords, command] of Object.entries(botCommands)) {
           const kw = keywords.split(" ")
-          if (words.slice(0, kw.length) === kw) {
+          if (words.slice(0, kw.length).join(" ") === kw.join(" ")) {
             await command(message, words)
             return
           }
